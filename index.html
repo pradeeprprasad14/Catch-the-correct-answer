@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Catch the Correct Answer - Educational Math Drop</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Arcade Cabinet Enclosure -->
+  <div id="arcade-container">
+    
+    <!-- Header Marquee / HUD -->
+    <header id="arcade-header">
+      <div class="header-left">
+        <div class="hud-item score-box">
+          <span class="hud-label">SCORE</span>
+          <span id="score-display" class="hud-value">00000</span>
+        </div>
+        <div class="hud-item high-box">
+          <span class="hud-label">HIGH</span>
+          <span id="high-score-display" class="hud-value">00000</span>
+        </div>
+        <div class="hud-item streak-box">
+          <span class="hud-label">COMBO</span>
+          <span id="combo-display" class="hud-value">x1</span>
+        </div>
+      </div>
+
+      <!-- Question / Target Banner (Marquee in the middle) -->
+      <div id="target-banner">
+        <div class="banner-sub">TARGET GOAL</div>
+        <div id="question-text" class="banner-main">READY?</div>
+        <div id="streak-meter-bar"><div id="streak-fill"></div></div>
+      </div>
+
+      <div class="header-right">
+        <div class="hud-item level-box">
+          <span class="hud-label">STAGE</span>
+          <span id="level-display" class="hud-value">01</span>
+        </div>
+        <div class="hud-item lives-box">
+          <span class="hud-label">LIVES</span>
+          <div id="lives-display" class="lives-hearts">❤️❤️❤️</div>
+        </div>
+        <div class="controls-icons">
+          <button id="btn-fullscreen" class="arcade-icon-btn" title="Toggle Fullscreen (F)">⛶</button>
+          <button id="btn-sound" class="arcade-icon-btn" title="Toggle Sound (M)">🔊</button>
+          <button id="btn-music" class="arcade-icon-btn" title="Toggle Chiptune Music (N)">🎵</button>
+          <button id="btn-crt" class="arcade-icon-btn" title="Toggle Scanlines (C)">📺</button>
+          <button id="btn-pause" class="arcade-icon-btn" title="Pause Game (P/ESC)">⏸️</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Game Canvas Container with Scanlines Overlay -->
+    <div id="canvas-wrapper">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <div id="crt-overlay" class="crt-effects"></div>
+      <div id="vignette-overlay"></div>
+
+      <!-- Active Power-up Badge -->
+      <div id="powerup-badge-container">
+        <div id="powerup-badge" class="hidden">
+          <span id="powerup-icon">⚡</span>
+          <span id="powerup-title">SLOW-MO</span>
+          <div id="powerup-timer"><div id="powerup-timer-bar"></div></div>
+        </div>
+      </div>
+
+      <!-- Floating In-Game Toast / Warning Notification -->
+      <div id="floating-notice" class="hidden"></div>
+
+      <!-- Start / Menu Overlay Screen -->
+      <div id="menu-overlay" class="game-overlay">
+        <div class="modal-box">
+          <h1 class="game-title neon-pulse">CATCH THE<br><span class="highlight-text">CORRECT ANSWER</span></h1>
+          <p class="game-tagline">⚡ CLASSIC RETRO ARCADE DROP ⚡</p>
+
+          <div class="settings-section">
+            <div class="mode-select-group">
+              <label class="section-label">CHOOSE GAME MODE</label>
+              <div class="btn-group" id="mode-buttons">
+                <button class="mode-btn active" data-mode="arcade">ARCADE (3 LIVES)</button>
+                <button class="mode-btn" data-mode="timeattack">TIME ATTACK (60s)</button>
+                <button class="mode-btn" data-mode="chill">ZEN (PRACTICE)</button>
+              </div>
+            </div>
+
+            <div class="category-select-group">
+              <label class="section-label">MATH CATEGORY</label>
+              <div class="btn-group" id="cat-buttons">
+                <button class="cat-btn active" data-cat="all">MIXED (ALL)</button>
+                <button class="cat-btn" data-cat="mult">MULTIPLICATION (×)</button>
+                <button class="cat-btn" data-cat="addsub">ADD & SUB (+ / -)</button>
+                <button class="cat-btn" data-cat="div">DIVISION (÷)</button>
+                <button class="cat-btn" data-cat="special">NUMBER NINJA (Primes & Multiples)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="instructions-panel">
+            <div class="inst-col">
+              <div class="key-badge">⬅️ / ➡️ or A / D</div>
+              <span>Move Basket (or Mouse / Touch)</span>
+            </div>
+            <div class="inst-col">
+              <div class="key-badge">SPACE / SHIFT</div>
+              <span>Turbo Dash Boost</span>
+            </div>
+            <div class="inst-col">
+              <div class="key-badge">🎯 CATCH</div>
+              <span>Target Answer only</span>
+            </div>
+            <div class="inst-col">
+              <div class="key-badge">⚠️ DODGE</div>
+              <span>Decoys & Distractors</span>
+            </div>
+          </div>
+
+          <button id="btn-start-game" class="arcade-start-btn">Start</button>
+        </div>
+      </div>
+
+      <!-- Pause Overlay Screen -->
+      <div id="pause-overlay" class="game-overlay hidden">
+        <div class="modal-box">
+          <h2 class="neon-text">GAME PAUSED</h2>
+          <p class="subtext">Take a breather, calculation champion!</p>
+          <div class="modal-actions">
+            <button id="btn-resume" class="arcade-action-btn primary">RESUME (P)</button>
+            <button id="btn-restart-paused" class="arcade-action-btn">RESTART</button>
+            <button id="btn-menu-paused" class="arcade-action-btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Over Overlay Screen -->
+      <div id="gameover-overlay" class="game-overlay hidden">
+        <div class="modal-box">
+          <h2 id="gameover-title" class="danger-text">GAME OVER</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-name">FINAL SCORE</span>
+              <span id="final-score" class="stat-val highlight">00000</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-name">MAX COMBO</span>
+              <span id="final-combo" class="stat-val">x0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-name">SOLVED</span>
+              <span id="final-solved" class="stat-val">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-name">ACCURACY</span>
+              <span id="final-accuracy" class="stat-val">100%</span>
+            </div>
+          </div>
+
+          <div id="new-high-score-banner" class="high-score-banner hidden">
+            🏆 NEW HIGH SCORE! 🏆
+          </div>
+
+          <div class="modal-actions">
+            <button id="btn-play-again" class="arcade-start-btn primary">PLAY AGAIN (SPACE / ENTER)</button>
+            <button id="btn-return-menu" class="arcade-action-btn">CHANGE MODE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arcade Bottom Control Deck (Virtual Controls for Mobile/Touch & Quick Info) -->
+    <footer id="arcade-footer">
+      <div class="touch-controls">
+        <button id="touch-left" class="touch-btn">◀ LEFT</button>
+        <button id="touch-dash" class="touch-btn dash-btn">⚡ DASH</button>
+        <button id="touch-right" class="touch-btn">RIGHT ▶</button>
+      </div>
+      <div class="footer-tips">
+        <span>TIP: Collect <strong>Power-Ups</strong> (⭐ Star, ⏱️ Slow-Mo, 💣 Bomb, 🛡️ Shield) to survive higher stages!</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/mathGenerator.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
