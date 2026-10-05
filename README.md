@@ -1,22 +1,13 @@
-# 🕹️ Catch the Correct Answer — Educational Math Drop
+# 🕹️ Catch the Correct Answer
 
-> **The Vibe:** Joyful, modern, light-themed arcade drop game with full-screen layout, high-clarity typography, 8-bit synthetic sound effects, procedural chiptune music, and scaling difficulty!
+> **The Vibe:** Classic retro arcade drop game with glowing CRT scanlines, 8-bit synthetic sound effects, procedural chiptune arpeggios, and scaling difficulty!
 
 ---
 
 ## 🚀 How to Play
 
 ### Instant Play
-Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, Firefox, Brave, etc.) by double-clicking it, or run `launch_game.bat`.
-
----
-
-## 🌟 New Features in This Version
-
-- 🖥️ **Full Screen Viewport:** Adapts natively to full screen across all monitors and resolutions. Includes a one-click **Fullscreen (⛶)** toggle button (`F` key).
-- 🎨 **Light, Joyful Aesthetic:** Bright, clean, high-contrast light colors for optimal daytime readability and educational focus.
-- 🔤 **High-Clarity Modern Typography:** Upgraded to Google Fonts **Outfit** and **Fredoka** for crystal-clear mathematical numerals and UI text.
-- 🎯 **Simple Start Flow:** Clean, prominent "Start" action button.
+Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, Firefox, etc.) by double-clicking it.
 
 ---
 
@@ -29,7 +20,7 @@ Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, 
    - Scales up in speed and complexity every 5 problems solved!
 2. **Time Attack Mode (60s)**
    - Race against a 60-second clock!
-   - Correct catches award **+3 Bonus Seconds**; decoy catches penalize **-4 Seconds**.
+   - Correct catches add bonus time; decoy catches subtract time.
 3. **Zen Mode (Practice)**
    - Unlimited lives with relaxed pacing.
    - Perfect for brushing up on mental math and times tables without pressure.
@@ -38,11 +29,11 @@ Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, 
 
 ## 🧮 Math Categories
 
-- **Mixed (All)**: Dynamic mixture of addition, subtraction, multiplication, and division.
+- **Mixed (All)**: A dynamic mix of addition, subtraction, multiplication, and division.
 - **Multiplication (×)**: Master times tables from 2x up to 12x and beyond.
-- **Add & Sub (+ / -)**: Fast-paced mental addition and subtraction with carry/borrow distractors.
+- **Add & Sub (+ / -)**: Fast-paced mental addition and subtraction.
 - **Division (÷)**: Clean whole-number division facts.
-- **Number Ninja**: Special mathematical rules such as *Primes*, *Multiples of 3*, *Multiples of 5*, *Even*, and *Odd* numbers!
+- **Number Ninja**: Special rules such as *Primes*, *Multiples of 3*, *Multiples of 5*, *Even*, and *Odd* numbers!
 
 ---
 
@@ -52,11 +43,11 @@ Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, 
 |---|---|---|---|
 | **Move Basket** | `←` / `→` or `A` / `D` | Move mouse horizontally | Drag finger or On-Screen Left/Right buttons |
 | **Turbo Dash** | `Space` or `Shift` | Left Click | On-Screen **DASH** button |
-| **Toggle Fullscreen**| `F` | Fullscreen Button (⛶) | Fullscreen Button (⛶) |
 | **Pause Game** | `P` or `ESC` | Pause Button (⏸️) | Pause Button (⏸️) |
 | **Mute SFX** | `M` | Audio Icon (🔊) | Audio Icon (🔊) |
 | **Toggle Music** | `N` | Music Icon (🎵) | Music Icon (🎵) |
-| **Toggle Scanlines** | `C` | CRT Icon (📺) | CRT Icon (📺) |
+| **Toggle CRT Scanlines** | `C` | CRT Icon (📺) | CRT Icon (📺) |
+| **Toggle Fullscreen** | `F` | Fullscreen Icon (⛶) | Fullscreen Icon (⛶) |
 
 ---
 
@@ -72,9 +63,9 @@ Simply open **`index.html`** in any web browser (Google Chrome, Microsoft Edge, 
 
 ## 🛠️ Project Structure
 
-- `index.html` — Header HUD, canvas viewport, modals, and virtual control deck.
-- `css/style.css` — Modern light theme, fullscreen layout, and typography.
-- `js/audio.js` — Procedural Web Audio API sound synthesizer & chiptune background arpeggios.
-- `js/particles.js` — Particle fireworks, confetti bursts, screen shake, and floating score texts.
-- `js/mathGenerator.js` — Smart arithmetic problem generation with collision-free, plausible near-miss decoys.
-- `js/game.js` — Core game loop, fullscreen resizing, basket physics, and collision detection.
+- `index.html` — Arcade cabinet marquee, HUD, overlays, and canvas viewport.
+- `css/style.css` — Retro arcade aesthetics, neon palettes, CRT scanlines, and responsive layout.
+- `js/audio.js` — Procedural 8-bit sound synthesizer & chiptune background arpeggios via Web Audio API.
+- `js/particles.js` — Particle fireworks, debris bursts, screen shake, and floating arcade score text.
+- `js/mathGenerator.js` — Intelligent arithmetic generation with plausible decoys (transposed digits, near-misses).
+- `js/game.js` — Core game engine, entity physics, collision detection, and game state management.

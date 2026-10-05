@@ -206,13 +206,15 @@ class ParticleSystem {
     for (const ft of this.floatingTexts) {
       ctx.save();
       ctx.globalAlpha = ft.alpha;
-      ctx.font = `700 ${ft.size + 4}px 'Fredoka', 'Outfit', sans-serif`;
+      ctx.font = `900 ${ft.size}px "Orbitron", "Chakra Petch", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // Crisp white halo outline for high contrast on light canvas
+      
+      // Crisp light stroke outline for contrast on light canvas
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 4;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.strokeText(ft.text, ft.x, ft.y);
+
+      // Text Fill
       ctx.fillStyle = ft.color;
       ctx.fillText(ft.text, ft.x, ft.y);
       ctx.restore();

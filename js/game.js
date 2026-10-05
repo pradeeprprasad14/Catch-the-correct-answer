@@ -7,7 +7,6 @@ class GameEngine {
   constructor() {
     this.canvas = document.getElementById('gameCanvas');
     this.ctx = this.canvas.getContext('2d');
-    this.canvasWrapper = document.getElementById('canvas-wrapper');
 
     // UI Elements
     this.scoreEl = document.getElementById('score-display');
@@ -73,9 +72,6 @@ class GameEngine {
     // Notice Timer
     this.noticeTimer = null;
 
-    // Resize canvas to full screen wrapper immediately
-    this.resizeCanvas();
-
     // Bindings
     this.initEntities();
     this.initEvents();
@@ -86,33 +82,6 @@ class GameEngine {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  resizeCanvas() {
-    if (!this.canvasWrapper) return;
-    const rect = this.canvasWrapper.getBoundingClientRect();
-    const w = Math.floor(rect.width);
-    const h = Math.floor(rect.height);
-    if (w > 0 && h > 0) {
-      this.canvas.width = w;
-      this.canvas.height = h;
-      if (this.basket) {
-        this.basket.y = this.canvas.height - 48;
-        if (this.basket.x + this.basket.width > this.canvas.width) {
-          this.basket.x = Math.max(0, this.canvas.width - this.basket.width - 10);
-        }
-      }
-    }
-  }
-
-  toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      }
-    }
-  }
-
   loadHighScore() {
     this.highScore = parseInt(localStorage.getItem(`retro_catch_highscore_${this.gameMode}`) || '0', 10);
     if (this.highScoreEl) {
@@ -121,14 +90,12 @@ class GameEngine {
   }
 
   initEntities() {
-    const defaultW = this.canvas.width > 0 ? this.canvas.width : 800;
-    const defaultH = this.canvas.height > 0 ? this.canvas.height : 600;
     this.basket = {
-      x: defaultW / 2 - 50,
-      y: defaultH - 48,
-      width: 100,
-      height: 24,
-      speed: 8,
+      x: this.canvas.width / 2 - 45,
+      y: this.canvas.height - 42,
+      width: 90,
+      height: 22,
+      speed: 7,
       dashMultiplier: 2.2,
       tilt: 0,
       glowTimer: 0
@@ -182,13 +149,11 @@ class GameEngine {
       if (['Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) this.keys.dash = false;
     });
 
-    // Window Resize for Fullscreen responsiveness
-    window.addEventListener('resize', () => this.resizeCanvas());
-
     // Mouse / Touch on Canvas
     const updatePointerPos = (clientX) => {
       const rect = this.canvas.getBoundingClientRect();
-      this.mouseX = clientX - rect.left;
+      const scaleX = this.canvas.width / rect.width;
+      this.mouseX = (clientX - rect.left) * scaleX;
       this.mouseControl = true;
     };
 
@@ -259,12 +224,7 @@ class GameEngine {
     document.getElementById('btn-restart-paused').addEventListener('click', () => this.startGame());
     document.getElementById('btn-menu-paused').addEventListener('click', () => this.showMenu());
 
-    // Sound / Music / CRT / Fullscreen Buttons
-    const btnFullscreen = document.getElementById('btn-fullscreen');
-    if (btnFullscreen) {
-      btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
-    }
-
+    // Sound / Music / CRT Buttons
     const btnSound = document.getElementById('btn-sound');
     btnSound.addEventListener('click', () => this.toggleSoundUI());
 
@@ -273,6 +233,20 @@ class GameEngine {
 
     const btnCrt = document.getElementById('btn-crt');
     btnCrt.addEventListener('click', () => this.toggleCRT());
+
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (btnFullscreen) {
+        const isFS = !!document.fullscreenElement;
+        btnFullscreen.classList.toggle('active', isFS);
+        btnFullscreen.textContent = isFS ? '🗗' : '⛶';
+        btnFullscreen.title = isFS ? 'Exit Fullscreen (F)' : 'Toggle Fullscreen (F)';
+      }
+    });
 
     // Mode Selection Buttons
     document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -292,6 +266,14 @@ class GameEngine {
         this.category = e.currentTarget.dataset.cat;
       });
     });
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
   }
 
   toggleSoundUI() {
@@ -444,17 +426,9 @@ class GameEngine {
     const baseSpeed = 1.8 + Math.min(3.5, this.stage * 0.35);
     const speedVariation = (Math.random() - 0.5) * 0.5;
 
-    // Palette of bright, crisp, high-contrast badges for light theme
-    const palettes = [
-      { border: '#0284c7', bg: '#f0f9ff', text: '#0369a1' },
-      { border: '#4361ee', bg: '#eef2ff', text: '#312e81' },
-      { border: '#059669', bg: '#ecfdf5', text: '#065f46' },
-      { border: '#d97706', bg: '#fffbeb', text: '#92400e' },
-      { border: '#7c3aed', bg: '#f5f3ff', text: '#5b21b6' },
-      { border: '#e11d48', bg: '#fff1f2', text: '#9f1239' },
-      { border: '#0d9488', bg: '#f0fdfa', text: '#115e59' }
-    ];
-    const chosenTheme = palettes[Math.floor(Math.random() * palettes.length)];
+    // Palette of vibrant light-theme accents
+    const palette = ['#0284c7', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#ea580c', '#06b6d4'];
+    const chosenColor = palette[Math.floor(Math.random() * palette.length)];
 
     this.fallingItems.push({
       type: 'number',
@@ -462,12 +436,10 @@ class GameEngine {
       isCorrect: isCorrect,
       x: posX,
       y: -radius,
-      radius: 27,
-      speed: Math.max(1.5, baseSpeed + speedVariation),
+      radius: radius,
+      speed: Math.max(1.4, baseSpeed + speedVariation),
       wobbleOffset: Math.random() * Math.PI * 2,
-      border: chosenTheme.border,
-      bgColor: chosenTheme.bg,
-      textColor: chosenTheme.text
+      color: chosenColor
     });
   }
 
@@ -823,11 +795,11 @@ class GameEngine {
     this.ctx.save();
     this.ctx.translate(shake.x, shake.y);
 
-    // Clear background to clean light canvas
+    // Clear background to light theme canvas color
     this.ctx.fillStyle = '#f8fafc';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Draw light grid background lines
+    // Draw subtle blueprint grid lines
     this.drawGrid();
 
     // Draw Falling Items
@@ -854,7 +826,7 @@ class GameEngine {
     this.ctx.save();
     this.ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
     this.ctx.lineWidth = 1;
-    const step = 45;
+    const step = 40;
     for (let x = 0; x < this.canvas.width; x += step) {
       this.ctx.beginPath();
       this.ctx.moveTo(x, 0);
@@ -878,41 +850,39 @@ class GameEngine {
     const wobbleX = Math.sin(item.wobbleOffset) * 2;
     const drawX = item.x + wobbleX;
     const drawY = item.y;
-    const border = item.border || '#4361ee';
-    const bg = item.bgColor || '#ffffff';
-    const text = item.textColor || '#0f172a';
+    const color = item.color || '#0284c7';
 
     // Soft drop shadow
-    ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.15)';
     ctx.shadowBlur = 8;
     ctx.shadowOffsetY = 3;
 
-    // Outer Bubble Surface
+    // Clean white circle bubble
     ctx.beginPath();
     ctx.arc(drawX, drawY, item.radius, 0, Math.PI * 2);
-    ctx.fillStyle = bg;
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    // Vibrant Crisp Border
-    ctx.shadowColor = border;
-    ctx.shadowBlur = 4;
+    // Reset shadow for crisp border ring
     ctx.shadowOffsetY = 0;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = border;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = color;
     ctx.stroke();
 
-    // Top Gloss Highlight
+    // Subtle inner highlight ring
     ctx.beginPath();
-    ctx.arc(drawX, drawY - item.radius * 0.45, item.radius * 0.45, Math.PI, 0);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.arc(drawX - 5, drawY - 5, item.radius * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.6)';
     ctx.fill();
 
-    // Render Number Text - Modern, Bold, Ultra-Legible
+    // Render Number Text with dark high contrast
     const str = item.value.toString();
     const fontSize = str.length > 2 ? 15 : (str.length > 1 ? 18 : 22);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = text;
-    ctx.font = `700 ${fontSize}px "Outfit", sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `900 ${fontSize}px "Orbitron", "Chakra Petch", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(str, drawX, drawY + 1);
@@ -926,6 +896,7 @@ class GameEngine {
     const drawX = item.x;
     const drawY = item.y + Math.sin(item.wobbleOffset) * 3;
 
+    // Determine color and icon per power-up type
     let color = '#f59e0b';
     let icon = '⭐';
     if (item.powerType === 'slow') {
@@ -938,27 +909,30 @@ class GameEngine {
       color = '#10b981';
       icon = '🛡️';
     } else if (item.powerType === 'heart') {
-      color = '#f43f5e';
+      color = '#ec4899';
       icon = '💖';
     }
 
+    // Shadow
     ctx.shadowColor = 'rgba(15, 23, 42, 0.15)';
     ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 3;
+    ctx.shadowOffsetY = 2;
 
+    // Bright pill/orb container
     ctx.beginPath();
     ctx.arc(drawX, drawY, item.radius, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 0;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
     ctx.lineWidth = 3;
     ctx.strokeStyle = color;
     ctx.stroke();
 
-    ctx.font = '18px sans-serif';
+    ctx.shadowBlur = 0;
+    ctx.font = '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(icon, drawX, drawY + 1);
@@ -980,51 +954,60 @@ class GameEngine {
     // Shield Aura if active
     if (this.shieldActive) {
       ctx.beginPath();
-      ctx.ellipse(0, 0, halfW + 16, halfH + 18, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = '#10b981';
+      ctx.ellipse(0, 0, halfW + 14, halfH + 16, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(2, 132, 199, 0.85)';
       ctx.lineWidth = 3;
-      ctx.shadowColor = '#10b981';
-      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#0284c7';
+      ctx.shadowBlur = 14;
       ctx.stroke();
     }
 
-    // Shadow underneath basket
+    // Shadow for basket
     ctx.shadowColor = 'rgba(15, 23, 42, 0.2)';
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 4;
 
-    // Sleek Modern Basket Hull
-    ctx.fillStyle = '#0f172a';
+    // Basket Base (Crisp dark slate for clear visual anchor)
+    ctx.fillStyle = '#1e293b';
     ctx.beginPath();
     if (ctx.roundRect) {
-      ctx.roundRect(-halfW, -halfH, b.width, b.height, [8, 8, 12, 12]);
+      ctx.roundRect(-halfW, -halfH, b.width, b.height, [6, 6, 10, 10]);
     } else {
       ctx.rect(-halfW, -halfH, b.width, b.height);
     }
     ctx.fill();
 
-    // Top Rim Catching Aperture Sensor
-    ctx.shadowColor = '#4361ee';
-    ctx.shadowBlur = 8;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#4361ee';
+    // Vibrant Rim
+    ctx.shadowOffsetY = 0;
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#ec4899';
+    ctx.shadowColor = '#ec4899';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+
+    // Top energy aperture line
     ctx.beginPath();
     ctx.moveTo(-halfW + 6, -halfH);
     ctx.lineTo(halfW - 6, -halfH);
+    ctx.strokeStyle = '#0284c7';
+    ctx.shadowColor = '#0284c7';
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Thruster Jets
-    const thrusterColor = this.keys.dash || this.touchControlState.dash ? '#f59e0b' : '#38bdf8';
+    // Thruster Jets underneath
+    const isDashing = this.keys.dash || this.touchControlState.dash;
+    const thrusterColor = isDashing ? '#f59e0b' : '#0284c7';
     ctx.fillStyle = thrusterColor;
     ctx.shadowColor = thrusterColor;
-    ctx.shadowBlur = 10;
-    ctx.fillRect(-halfW + 14, halfH, 12, 5 + Math.random() * 5);
-    ctx.fillRect(halfW - 26, halfH, 12, 5 + Math.random() * 5);
+    ctx.shadowBlur = 8;
+    ctx.fillRect(-halfW + 12, halfH, 10, 4 + Math.random() * 4);
+    ctx.fillRect(halfW - 22, halfH, 10, 4 + Math.random() * 4);
 
-    // Center Label "CATCH"
+    // Decorative Center Emblem
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 11px "Outfit", sans-serif';
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '900 10px "Orbitron", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CATCH', 0, 1);
