@@ -73,6 +73,7 @@ class GameEngine {
     this.noticeTimer = null;
 
     // Bindings
+    this.resizeCanvas();
     this.initEntities();
     this.initEvents();
     this.updateHUD();
@@ -89,13 +90,65 @@ class GameEngine {
     }
   }
 
+  resizeCanvas() {
+    const wrapper = document.getElementById('canvas-wrapper');
+    if (!wrapper) return;
+    const w = wrapper.clientWidth;
+    const h = wrapper.clientHeight;
+    if (w <= 0 || h <= 0) return;
+
+    const oldW = this.canvas.width;
+    const oldH = this.canvas.height;
+
+    this.canvas.width = w;
+    this.canvas.height = h;
+
+    // Responsive basket sizing & speed based on viewport dimensions
+    const basketW = Math.max(70, Math.min(130, w * 0.14));
+    const basketH = Math.max(20, Math.min(26, h * 0.04));
+    const basketSpeed = Math.max(7, Math.min(16, w * 0.012));
+
+    if (this.basket) {
+      this.basket.width = basketW;
+      this.basket.height = basketH;
+      this.basket.speed = basketSpeed;
+      this.basket.y = h - basketH - 20;
+
+      if (oldW > 0) {
+        this.basket.x = (this.basket.x / oldW) * w;
+      } else {
+        this.basket.x = w / 2 - basketW / 2;
+      }
+
+      // Clamp basket to screen
+      if (this.basket.x < 5) this.basket.x = 5;
+      if (this.basket.x + this.basket.width > w - 5) {
+        this.basket.x = w - 5 - this.basket.width;
+      }
+    }
+
+    // Keep falling items nicely proportioned if resized mid-game
+    if (oldW > 0 && oldW !== w && this.fallingItems && this.fallingItems.length > 0) {
+      for (const item of this.fallingItems) {
+        item.x = (item.x / oldW) * w;
+        item.x = Math.max(item.radius, Math.min(w - item.radius, item.x));
+      }
+    }
+  }
+
   initEntities() {
+    const w = this.canvas.width || 800;
+    const h = this.canvas.height || 600;
+    const basketW = Math.max(70, Math.min(130, w * 0.14));
+    const basketH = Math.max(20, Math.min(26, h * 0.04));
+    const basketSpeed = Math.max(7, Math.min(16, w * 0.012));
+
     this.basket = {
-      x: this.canvas.width / 2 - 45,
-      y: this.canvas.height - 42,
-      width: 90,
-      height: 22,
-      speed: 7,
+      x: w / 2 - basketW / 2,
+      y: h - basketH - 20,
+      width: basketW,
+      height: basketH,
+      speed: basketSpeed,
       dashMultiplier: 2.2,
       tilt: 0,
       glowTimer: 0
@@ -176,15 +229,33 @@ class GameEngine {
 
     this.canvas.addEventListener('touchstart', (e) => {
       if (this.state === 'PLAYING' && e.touches.length > 0) {
+        if (e.cancelable) e.preventDefault();
         updatePointerPos(e.touches[0].clientX);
+        if (e.touches.length > 1) {
+          this.keys.dash = true;
+          window.soundEngine.playDash();
+        }
       }
-    }, { passive: true });
+    }, { passive: false });
 
     this.canvas.addEventListener('touchmove', (e) => {
       if (this.state === 'PLAYING' && e.touches.length > 0) {
+        if (e.cancelable) e.preventDefault();
         updatePointerPos(e.touches[0].clientX);
       }
-    }, { passive: true });
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchend', (e) => {
+      if (e.touches.length <= 1) {
+        this.keys.dash = false;
+      }
+    });
+
+    // Window resize & orientation listeners for responsive full-screen
+    window.addEventListener('resize', () => this.resizeCanvas());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.resizeCanvas(), 100);
+    });
 
     // Touch Buttons
     const setupTouchBtn = (id, keyName) => {
@@ -195,11 +266,11 @@ class GameEngine {
         this.touchControlState[keyName] = false;
       };
       btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         this.touchControlState[keyName] = true;
         this.mouseControl = false;
         if (keyName === 'dash') window.soundEngine.playDash();
-      });
+      }, { passive: false });
       btn.addEventListener('touchend', release);
       btn.addEventListener('touchcancel', release);
       btn.addEventListener('mousedown', () => {
@@ -239,13 +310,13 @@ class GameEngine {
       btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
     }
 
-    document.addEventListener('fullscreenchange', () => {
-      if (btnFullscreen) {
-        const isFS = !!document.fullscreenElement;
-        btnFullscreen.classList.toggle('active', isFS);
-        btnFullscreen.textContent = isFS ? '🗗' : '⛶';
-        btnFullscreen.title = isFS ? 'Exit Fullscreen (F)' : 'Toggle Fullscreen (F)';
-      }
+    const btnMenuFS = document.getElementById('btn-fullscreen-menu');
+    if (btnMenuFS) {
+      btnMenuFS.addEventListener('click', () => this.toggleFullscreen());
+    }
+
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(ev => {
+      document.addEventListener(ev, () => this.handleFullscreenChange());
     });
 
     // Mode Selection Buttons
@@ -269,11 +340,37 @@ class GameEngine {
   }
 
   toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+    const doc = document;
+    const docEl = document.documentElement;
+    const isFS = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+    if (!isFS) {
+      const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+      if (req) {
+        req.call(docEl).catch(() => {});
+      }
     } else {
-      document.exitFullscreen().catch(() => {});
+      const exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+      if (exit) {
+        exit.call(doc).catch(() => {});
+      }
     }
+  }
+
+  handleFullscreenChange() {
+    const doc = document;
+    const isFS = !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    if (btnFullscreen) {
+      btnFullscreen.classList.toggle('active', isFS);
+      btnFullscreen.textContent = isFS ? '🗗' : '⛶';
+      btnFullscreen.title = isFS ? 'Exit Fullscreen (F)' : 'Toggle Fullscreen (F)';
+    }
+    const btnMenuFS = document.getElementById('btn-fullscreen-menu');
+    if (btnMenuFS) {
+      btnMenuFS.textContent = isFS ? '🗗 Exit Fullscreen' : '⛶ Fullscreen';
+    }
+    setTimeout(() => this.resizeCanvas(), 60);
   }
 
   toggleSoundUI() {
@@ -422,8 +519,9 @@ class GameEngine {
       attempts++;
     }
 
-    // Speed scales with stage
-    const baseSpeed = 1.8 + Math.min(3.5, this.stage * 0.35);
+    // Speed scales with stage and canvas height so reaction time is consistent across mobile & big screens
+    const heightFactor = Math.max(0.85, Math.min(1.35, (this.canvas.height || 600) / 600));
+    const baseSpeed = (1.8 + Math.min(3.5, this.stage * 0.35)) * heightFactor;
     const speedVariation = (Math.random() - 0.5) * 0.5;
 
     // Palette of vibrant light-theme accents
@@ -451,6 +549,7 @@ class GameEngine {
     const chosenType = types[Math.floor(Math.random() * types.length)];
     const radius = 20;
     const posX = radius + Math.random() * (this.canvas.width - radius * 2);
+    const heightFactor = Math.max(0.85, Math.min(1.35, (this.canvas.height || 600) / 600));
 
     this.fallingItems.push({
       type: 'powerup',
@@ -458,7 +557,7 @@ class GameEngine {
       x: posX,
       y: -radius,
       radius: radius,
-      speed: 2.2,
+      speed: 2.2 * heightFactor,
       wobbleOffset: Math.random() * Math.PI * 2
     });
   }
@@ -534,9 +633,10 @@ class GameEngine {
       window.particleSystem.spawnDashTrail(this.basket.x + this.basket.width / 2, this.basket.y, this.basket.width, this.basket.height);
     }
 
-    // Spawn Timer
+    // Spawn Timer (slightly faster on wide big screens so the playfield stays dynamic)
     this.spawnTimer++;
-    const activeInterval = Math.max(35, this.spawnInterval - this.stage * 4);
+    const widthModifier = this.canvas.width > 1200 ? 8 : (this.canvas.width > 900 ? 4 : 0);
+    const activeInterval = Math.max(30, this.spawnInterval - this.stage * 4 - widthModifier);
     if (this.spawnTimer >= activeInterval) {
       this.spawnTimer = 0;
       this.spawnFallingItem(false);
