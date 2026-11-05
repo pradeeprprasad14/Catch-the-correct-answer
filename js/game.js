@@ -53,7 +53,8 @@ class GameEngine {
     this.fallingItems = [];
     this.currentProblem = null;
     this.spawnTimer = 0;
-    this.spawnInterval = 75; // Frames between spawns
+    this.spawnInterval = 95; // Frames between spawns for comfortable reading pace
+    this.correctSpawnIn = 0; // Countdown until correct answer drops (randomized)
 
     // Controls
     this.keys = {
@@ -420,7 +421,8 @@ class GameEngine {
     this.doublePointsTimer = 0;
     this.slowMoTimer = 0;
     this.spawnTimer = 0;
-    this.spawnInterval = 75;
+    this.spawnInterval = 95;
+    this.correctSpawnIn = Math.floor(Math.random() * 3);
 
     this.loadHighScore();
 
@@ -476,8 +478,15 @@ class GameEngine {
     void this.questionEl.offsetWidth; // Trigger reflow for animation restart
     this.questionEl.classList.add('pulse-question');
 
-    // Spawn the target answer immediately
-    this.spawnFallingItem(true);
+    // Randomize drop order: correct answer can fall 1st, 2nd, or 3rd
+    // 0 = correct answer drops 1st
+    // 1 = 1 decoy drops first, then correct answer
+    // 2 = 2 decoys drop first, then correct answer
+    this.correctSpawnIn = Math.floor(Math.random() * 3);
+
+    // Reset spawn timer and spawn the first item in the sequence
+    this.spawnTimer = 0;
+    this.spawnFallingItem(false);
   }
 
   spawnFallingItem(forceCorrect = false) {
@@ -491,11 +500,17 @@ class GameEngine {
 
     let isCorrect = forceCorrect;
     if (!forceCorrect) {
-      // Guarantee exactly ONE correct answer falling at any time
       const hasCorrectOnScreen = this.fallingItems.some(item => item.isCorrect);
       if (!hasCorrectOnScreen) {
-        isCorrect = true;
+        if (this.correctSpawnIn <= 0) {
+          isCorrect = true;
+        } else {
+          // Decoy drops first; count down until correct answer drops
+          this.correctSpawnIn--;
+          isCorrect = false;
+        }
       } else {
+        // Correct answer is already active on screen, spawn a decoy
         isCorrect = false;
       }
     }
@@ -519,10 +534,10 @@ class GameEngine {
       attempts++;
     }
 
-    // Speed scales with stage and canvas height so reaction time is consistent across mobile & big screens
-    const heightFactor = Math.max(0.85, Math.min(1.35, (this.canvas.height || 600) / 600));
-    const baseSpeed = (1.8 + Math.min(3.5, this.stage * 0.35)) * heightFactor;
-    const speedVariation = (Math.random() - 0.5) * 0.5;
+    // Gentle, relaxed educational fall speed (starts slow and scales up gradually with stage)
+    const baseSpeed = 0.95 + Math.min(1.0, (this.stage - 1) * 0.15);
+    const speedVariation = (Math.random() - 0.5) * 0.2;
+    const finalSpeed = Math.max(0.8, baseSpeed + speedVariation);
 
     // Palette of vibrant light-theme accents
     const palette = ['#0284c7', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#ea580c', '#06b6d4'];
@@ -535,7 +550,7 @@ class GameEngine {
       x: posX,
       y: -radius,
       radius: radius,
-      speed: Math.max(1.4, baseSpeed + speedVariation),
+      speed: finalSpeed,
       wobbleOffset: Math.random() * Math.PI * 2,
       color: chosenColor
     });
@@ -549,7 +564,7 @@ class GameEngine {
     const chosenType = types[Math.floor(Math.random() * types.length)];
     const radius = 20;
     const posX = radius + Math.random() * (this.canvas.width - radius * 2);
-    const heightFactor = Math.max(0.85, Math.min(1.35, (this.canvas.height || 600) / 600));
+    const baseSpeed = 0.95 + Math.min(1.0, (this.stage - 1) * 0.15);
 
     this.fallingItems.push({
       type: 'powerup',
@@ -557,7 +572,7 @@ class GameEngine {
       x: posX,
       y: -radius,
       radius: radius,
-      speed: 2.2 * heightFactor,
+      speed: Math.max(0.85, baseSpeed * 0.95),
       wobbleOffset: Math.random() * Math.PI * 2
     });
   }
@@ -633,10 +648,10 @@ class GameEngine {
       window.particleSystem.spawnDashTrail(this.basket.x + this.basket.width / 2, this.basket.y, this.basket.width, this.basket.height);
     }
 
-    // Spawn Timer (slightly faster on wide big screens so the playfield stays dynamic)
+    // Spawn Timer (spaced nicely for readable calculation time)
     this.spawnTimer++;
-    const widthModifier = this.canvas.width > 1200 ? 8 : (this.canvas.width > 900 ? 4 : 0);
-    const activeInterval = Math.max(30, this.spawnInterval - this.stage * 4 - widthModifier);
+    const widthModifier = this.canvas.width > 1200 ? 10 : (this.canvas.width > 900 ? 5 : 0);
+    const activeInterval = Math.max(65, this.spawnInterval - (this.stage - 1) * 5 - widthModifier);
     if (this.spawnTimer >= activeInterval) {
       this.spawnTimer = 0;
       this.spawnFallingItem(false);
@@ -778,8 +793,10 @@ class GameEngine {
         }
       }
 
-      // Respawn the answer or rotate to new problem
-      this.spawnFallingItem(true);
+      // Missed the answer: let 1-2 decoys fall before target returns so player has recovery time
+      this.correctSpawnIn = 1 + Math.floor(Math.random() * 2);
+      this.spawnTimer = 0;
+      this.spawnFallingItem(false);
     }
   }
 
