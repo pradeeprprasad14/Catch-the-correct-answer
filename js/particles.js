@@ -26,7 +26,7 @@ class ParticleSystem {
 
   // Confetti / Starburst on correct catch
   spawnSuccessBurst(x, y, count = 28) {
-    const colors = ['#00f3ff', '#ffea00', '#39ff14', '#ffffff', '#ff007f'];
+    const colors = ['#38bdf8', '#fbbf24', '#34d399', '#ffffff', '#fb7185', '#c084fc'];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 2 + Math.random() * 6;
@@ -209,12 +209,14 @@ class ParticleSystem {
       ctx.font = `900 ${ft.size}px "Orbitron", "Chakra Petch", sans-serif`;
       ctx.textAlign = 'center';
       
-      // Crisp light stroke outline for contrast on light canvas
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
+      // Deep contrast outline
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.lineWidth = 5;
       ctx.strokeText(ft.text, ft.x, ft.y);
 
-      // Text Fill
+      // Luminous text fill with soft neon glow
+      ctx.shadowColor = ft.color;
+      ctx.shadowBlur = 10;
       ctx.fillStyle = ft.color;
       ctx.fillText(ft.text, ft.x, ft.y);
       ctx.restore();

@@ -539,8 +539,8 @@ class GameEngine {
     const speedVariation = (Math.random() - 0.5) * 0.2;
     const finalSpeed = Math.max(0.8, baseSpeed + speedVariation);
 
-    // Palette of vibrant light-theme accents
-    const palette = ['#0284c7', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#ea580c', '#06b6d4'];
+    // Palette of luminous arcade accents (balanced against twilight slate)
+    const palette = ['#38bdf8', '#ec4899', '#34d399', '#fbbf24', '#c084fc', '#fb923c', '#2dd4bf'];
     const chosenColor = palette[Math.floor(Math.random() * palette.length)];
 
     this.fallingItems.push({
@@ -912,11 +912,15 @@ class GameEngine {
     this.ctx.save();
     this.ctx.translate(shake.x, shake.y);
 
-    // Clear background to light theme canvas color
-    this.ctx.fillStyle = '#f8fafc';
+    // Balanced Twilight Slate background gradient - rich, comfortable, non-glaring
+    const grad = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+    grad.addColorStop(0, '#192233');
+    grad.addColorStop(0.55, '#1e283d');
+    grad.addColorStop(1, '#141c2a');
+    this.ctx.fillStyle = grad;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Draw subtle blueprint grid lines
+    // Subtle laser wireframe grid with horizon illumination
     this.drawGrid();
 
     // Draw Falling Items
@@ -941,9 +945,9 @@ class GameEngine {
 
   drawGrid() {
     this.ctx.save();
-    this.ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
     this.ctx.lineWidth = 1;
-    const step = 40;
+    const step = 44;
     for (let x = 0; x < this.canvas.width; x += step) {
       this.ctx.beginPath();
       this.ctx.moveTo(x, 0);
@@ -956,6 +960,16 @@ class GameEngine {
       this.ctx.lineTo(this.canvas.width, y);
       this.ctx.stroke();
     }
+
+    // Subtle guide line above catching zone
+    const horizonY = this.canvas.height - 75;
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.16)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, horizonY);
+    this.ctx.lineTo(this.canvas.width, horizonY);
+    this.ctx.stroke();
+
     this.ctx.restore();
   }
 
@@ -964,37 +978,70 @@ class GameEngine {
     ctx.save();
 
     // Gentle float wobble
-    const wobbleX = Math.sin(item.wobbleOffset) * 2;
+    const wobbleX = Math.sin(item.wobbleOffset) * 2.5;
     const drawX = item.x + wobbleX;
     const drawY = item.y;
-    const color = item.color || '#0284c7';
+    const color = item.color || '#38bdf8';
 
-    // Soft drop shadow
-    ctx.shadowColor = 'rgba(15, 23, 42, 0.15)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 3;
+    // Soft ambient ground shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 5;
 
-    // Clean white circle bubble
+    // 3D Sphere Radial Gradient: glossy highlight top-left, pearl white body, tinted rim
+    const sphereGrad = ctx.createRadialGradient(
+      drawX - item.radius * 0.3,
+      drawY - item.radius * 0.35,
+      item.radius * 0.08,
+      drawX,
+      drawY,
+      item.radius
+    );
+    sphereGrad.addColorStop(0, '#ffffff');
+    sphereGrad.addColorStop(0.3, '#f8fafc');
+    sphereGrad.addColorStop(0.75, '#e2e8f0');
+    sphereGrad.addColorStop(0.94, '#cbd5e1');
+    sphereGrad.addColorStop(1, color);
+
     ctx.beginPath();
     ctx.arc(drawX, drawY, item.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = sphereGrad;
     ctx.fill();
 
-    // Reset shadow for crisp border ring
+    // Glowing Neon Outer Rim Ring
     ctx.shadowOffsetY = 0;
     ctx.shadowColor = color;
-    ctx.shadowBlur = 6;
-    ctx.lineWidth = 3.5;
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 3.2;
     ctx.strokeStyle = color;
     ctx.stroke();
 
-    // Subtle inner highlight ring
+    // Glossy Curved Lens Reflection Arc (top-left glint)
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(drawX - 5, drawY - 5, item.radius * 0.42, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(241, 245, 249, 0.6)';
+    ctx.ellipse(
+      drawX - item.radius * 0.32,
+      drawY - item.radius * 0.34,
+      item.radius * 0.38,
+      item.radius * 0.2,
+      -Math.PI / 4,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fill();
+    ctx.restore();
 
-    // Render Number Text with dark high contrast
+    // Subtle bottom rim reflection
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, item.radius - 2, Math.PI * 0.25, Math.PI * 0.75);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // Render Number Text with ultra-crisp dark charcoal punch
     const str = item.value.toString();
     const fontSize = str.length > 2 ? 15 : (str.length > 1 ? 18 : 22);
     ctx.shadowBlur = 0;
@@ -1013,40 +1060,56 @@ class GameEngine {
     const drawX = item.x;
     const drawY = item.y + Math.sin(item.wobbleOffset) * 3;
 
-    // Determine color and icon per power-up type
-    let color = '#f59e0b';
+    let color = '#fbbf24';
     let icon = '⭐';
     if (item.powerType === 'slow') {
-      color = '#0284c7';
+      color = '#38bdf8';
       icon = '⏱️';
     } else if (item.powerType === 'bomb') {
-      color = '#ef4444';
+      color = '#f87171';
       icon = '💣';
     } else if (item.powerType === 'shield') {
-      color = '#10b981';
+      color = '#34d399';
       icon = '🛡️';
     } else if (item.powerType === 'heart') {
-      color = '#ec4899';
+      color = '#fb7185';
       icon = '💖';
     }
 
-    // Shadow
-    ctx.shadowColor = 'rgba(15, 23, 42, 0.15)';
-    ctx.shadowBlur = 8;
+    // Luminous outer aura
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 14;
     ctx.shadowOffsetY = 2;
 
-    // Bright pill/orb container
+    // Radial gemstone gradient
+    const orbGrad = ctx.createRadialGradient(
+      drawX - item.radius * 0.25,
+      drawY - item.radius * 0.25,
+      item.radius * 0.1,
+      drawX,
+      drawY,
+      item.radius
+    );
+    orbGrad.addColorStop(0, '#ffffff');
+    orbGrad.addColorStop(0.35, '#f1f5f9');
+    orbGrad.addColorStop(0.85, '#e2e8f0');
+    orbGrad.addColorStop(1, color);
+
     ctx.beginPath();
     ctx.arc(drawX, drawY, item.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = orbGrad;
     ctx.fill();
 
     ctx.shadowOffsetY = 0;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 8;
     ctx.lineWidth = 3;
     ctx.strokeStyle = color;
     ctx.stroke();
+
+    // Top specular glint
+    ctx.beginPath();
+    ctx.arc(drawX - 4, drawY - 5, item.radius * 0.35, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fill();
 
     ctx.shadowBlur = 0;
     ctx.font = '16px sans-serif';
@@ -1068,63 +1131,97 @@ class GameEngine {
     const halfW = b.width / 2;
     const halfH = b.height / 2;
 
-    // Shield Aura if active
+    // Shield Forcefield Dome if active
     if (this.shieldActive) {
       ctx.beginPath();
-      ctx.ellipse(0, 0, halfW + 14, halfH + 16, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(2, 132, 199, 0.85)';
+      ctx.ellipse(0, -2, halfW + 16, halfH + 18, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
       ctx.lineWidth = 3;
-      ctx.shadowColor = '#0284c7';
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 16;
       ctx.stroke();
     }
 
-    // Shadow for basket
-    ctx.shadowColor = 'rgba(15, 23, 42, 0.2)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetY = 4;
+    // Dynamic Basket Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 6;
 
-    // Basket Base (Crisp dark slate for clear visual anchor)
-    ctx.fillStyle = '#1e293b';
+    // Hover-Skiff Hull (Metallic dark slate with chamfered gradient)
+    const hullGrad = ctx.createLinearGradient(0, -halfH, 0, halfH);
+    hullGrad.addColorStop(0, '#384558');
+    hullGrad.addColorStop(0.3, '#2a3545');
+    hullGrad.addColorStop(1, '#1b2330');
+    ctx.fillStyle = hullGrad;
+
     ctx.beginPath();
     if (ctx.roundRect) {
-      ctx.roundRect(-halfW, -halfH, b.width, b.height, [6, 6, 10, 10]);
+      ctx.roundRect(-halfW, -halfH, b.width, b.height, [8, 8, 12, 12]);
     } else {
       ctx.rect(-halfW, -halfH, b.width, b.height);
     }
     ctx.fill();
 
-    // Vibrant Rim
+    // Metallic Top Edge Bevel
     ctx.shadowOffsetY = 0;
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#ec4899';
-    ctx.shadowColor = '#ec4899';
-    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(-halfW + 4, -halfH + 1);
+    ctx.lineTo(halfW - 4, -halfH + 1);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Top energy aperture line
+    // Glowing Magnetic Aperture Rail (Catching sensor across top)
     ctx.beginPath();
     ctx.moveTo(-halfW + 6, -halfH);
     ctx.lineTo(halfW - 6, -halfH);
-    ctx.strokeStyle = '#0284c7';
-    ctx.shadowColor = '#0284c7';
-    ctx.shadowBlur = 6;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 8;
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Thruster Jets underneath
-    const isDashing = this.keys.dash || this.touchControlState.dash;
-    const thrusterColor = isDashing ? '#f59e0b' : '#0284c7';
-    ctx.fillStyle = thrusterColor;
-    ctx.shadowColor = thrusterColor;
-    ctx.shadowBlur = 8;
-    ctx.fillRect(-halfW + 12, halfH, 10, 4 + Math.random() * 4);
-    ctx.fillRect(halfW - 22, halfH, 10, 4 + Math.random() * 4);
+    // Dual Lateral LED Navigation Beacons (left & right tips)
+    ctx.fillStyle = '#ec4899';
+    ctx.shadowColor = '#ec4899';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(-halfW + 6, 0, 3, 0, Math.PI * 2);
+    ctx.arc(halfW - 6, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Decorative Center Emblem
+    // Rocket Thruster Jets underneath
+    const isDashing = this.keys.dash || this.touchControlState.dash;
+    const flameColor = isDashing ? '#fbbf24' : '#38bdf8';
+    const flameHeight = isDashing ? (8 + Math.random() * 8) : (4 + Math.random() * 4);
+    
+    ctx.fillStyle = flameColor;
+    ctx.shadowColor = flameColor;
+    ctx.shadowBlur = 10;
+    ctx.fillRect(-halfW + 12, halfH, 10, flameHeight);
+    ctx.fillRect(halfW - 22, halfH, 10, flameHeight);
+
+    // Illuminated Cockpit Badge
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#f8fafc';
-    ctx.font = '900 10px "Orbitron", sans-serif';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(-24, -6, 48, 12, 4);
+    } else {
+      ctx.rect(-24, -6, 48, 12);
+    }
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Center Text Emblem
+    ctx.fillStyle = '#38bdf8';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 4;
+    ctx.font = '900 9px "Orbitron", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CATCH', 0, 1);
